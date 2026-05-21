@@ -34,7 +34,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Базовые переменные (синяя тема по умолчанию) */
         :root {
             --bg-body: #f5f5f7;
             --bg-app: #ffffff;
@@ -53,7 +52,6 @@
             --shadow-sm: 0 8px 30px rgba(0, 0, 0, 0.05);
         }
 
-        /* Тёмная синяя тема */
         body[data-theme="dark-blue"] {
             --bg-body: #0a0a0c;
             --bg-app: #1c1c1e;
@@ -72,7 +70,6 @@
             --shadow-sm: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Тёмная красная тема */
         body[data-theme="dark-red"] {
             --bg-body: #0a0a0c;
             --bg-app: #1c1c1e;
@@ -91,7 +88,6 @@
             --shadow-sm: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Тёмная фиолетовая тема */
         body[data-theme="dark-purple"] {
             --bg-body: #0a0a0c;
             --bg-app: #1c1c1e;
@@ -110,7 +106,6 @@
             --shadow-sm: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Светлая тема (классическая) */
         body[data-theme="light"] {
             --bg-body: #f5f5f7;
             --bg-app: #ffffff;
@@ -157,7 +152,6 @@
             transition: background 0.2s ease;
         }
 
-        /* Header с кнопкой темы */
         .app-header {
             display: flex;
             justify-content: flex-end;
@@ -183,7 +177,6 @@
             transform: translateY(-1px);
         }
         
-        /* Выпадающее меню тем */
         .theme-dropdown {
             position: absolute;
             top: 55px;
@@ -830,11 +823,11 @@
             <div class="section">
                 <div class="section-title">Управление рецептами</div>
                 <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
-                    <button id="btnAddRecipe">+ Новый рецепт</button>
+                    <button id="btnAddRecipe">➕ Новый рецепт</button>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="recipeFilterContainer">
                         <span data-filter="all" class="badge active-filter" style="background:var(--accent); color:white; cursor:pointer;">Все</span>
-                        <span data-filter="distillation" class="badge" style="cursor:pointer;">С дистилляцией</span>
-                        <span data-filter="aged" class="badge" style="cursor:pointer;">С выдержкой</span>
+                        <span data-filter="alcohol" class="badge" style="cursor:pointer;">Алкоголь</span>
+                        <span data-filter="detox" class="badge" style="cursor:pointer;">Отрезвитель</span>
                     </div>
                     <input type="text" id="recipeSearch" class="search-input" placeholder="🔍 Поиск по названию" style="width: 240px;">
                 </div>
@@ -851,6 +844,12 @@
     <div class="modal-content">
         <div class="modal-header"><span id="modalTitle">Рецепт</span><span class="close-modal" id="closeRecipeModal">✕</span></div>
         <input type="text" id="recipeNameInput" placeholder="Название рецепта" style="width:100%; padding:12px; border:1px solid var(--border-light); border-radius:14px; margin-bottom:16px; background:var(--bg-tertiary); color:var(--text-primary);">
+        <div><label style="font-weight:500;">Тип напитка</label>
+            <div style="display: flex; gap: 16px; margin: 8px 0 12px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="radio" name="drinkType" value="alcohol" checked> Алкоголь</label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="radio" name="drinkType" value="detox"> Отрезвитель</label>
+            </div>
+        </div>
         <div><label style="font-weight:500;">Ингредиенты (на 1 котёл)</label><div id="ingredientsList"></div><button id="addIngredientBtn" style="background:var(--bg-tertiary); color:var(--text-primary); margin:10px 0; width:100%;">+ Добавить ингредиент</button></div>
         <div style="margin:12px 0;"><label style="font-weight:500;">Брожение</label><div style="display:flex; gap:8px;"><input type="number" id="fermentValue" placeholder="8" style="flex:1; padding:10px; border:1px solid var(--border-light); border-radius:14px; background:var(--bg-tertiary); color:var(--text-primary);"> <select id="fermentUnit" style="padding:10px; border-radius:14px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-primary);"><option value="минут" selected>минут</option><option value="часов">часов</option><option value="дней">дней</option></select></div></div>
         <div style="margin:12px 0; display: flex; gap: 12px; align-items: center;"><span style="font-weight:500;">Дистилляция</span> <input type="checkbox" id="distillationCheck"> <span id="distCountSpan" style="display:none;"><input type="number" id="distCount" value="1" min="1" style="width:70px; padding:8px; border-radius:12px; border:1px solid var(--border-light); background:var(--bg-tertiary);"> раз(а)</span></div>
@@ -911,7 +910,6 @@
             document.body.setAttribute('data-theme', theme);
             localStorage.setItem('app_theme', theme);
             themeDropdown.classList.remove('show');
-            // Обновляем цвет theme-color meta
             let themeColor = '#007aff';
             if (theme === 'dark-blue') themeColor = '#0a84ff';
             else if (theme === 'dark-red') themeColor = '#ff3b30';
@@ -951,7 +949,7 @@
         }
     });
     
-    // ==================== АЛКОГОЛЬ (код тот же, но адаптирован под темы) ====================
+    // ==================== АЛКОГОЛЬ ====================
     let drinks = [];
     function genId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 6); }
     function saveAlcohol() { localStorage.setItem('alcohol_simple', JSON.stringify(drinks)); }
@@ -1031,35 +1029,51 @@
     };
     document.getElementById('alcoholCancelImport').onclick = () => { alcoholImportArea.style.display = 'none'; };
     
-    // ==================== РЕЦЕПТЫ ====================
+    // ==================== РЕЦЕПТЫ (ПУСТОЙ СПИСОК) ====================
     let recipes = [];
     let currentFilterRec = 'all', searchRec = '';
     let editingRecipeId = null;
+    
     function saveRecipes() { localStorage.setItem('recipes_simple', JSON.stringify(recipes)); }
     function loadRecipes() {
         const saved = localStorage.getItem('recipes_simple');
-        if(saved) { try { recipes = JSON.parse(saved); if(!Array.isArray(recipes)) recipes = []; } catch(e){ recipes = []; } }
-        else recipes = [];
+        if(saved) { 
+            try { 
+                recipes = JSON.parse(saved); 
+                if(!Array.isArray(recipes)) recipes = []; 
+            } catch(e){ recipes = []; }
+        } else {
+            recipes = [];
+        }
         saveRecipes();
     }
+    
     function renderRecipes() {
         let filtered = [...recipes];
         if(searchRec.trim()){ const q = searchRec.toLowerCase(); filtered = filtered.filter(r=> r.name.toLowerCase().includes(q) || r.ingredients.some(i=>i.name.toLowerCase().includes(q))); }
-        if(currentFilterRec === 'distillation') filtered = filtered.filter(r=> r.distillation === true);
-        if(currentFilterRec === 'aged') filtered = filtered.filter(r=> r.aging > 0);
+        if(currentFilterRec === 'alcohol') filtered = filtered.filter(r=> r.type === 'alcohol');
+        if(currentFilterRec === 'detox') filtered = filtered.filter(r=> r.type === 'detox');
+        
         const container = document.getElementById('recipeListContainer');
-        if(filtered.length === 0){ container.innerHTML = `<div class="empty-state">📭 Нет рецептов. Создайте первый рецепт.</div>`; return; }
+        if(filtered.length === 0){ 
+            let msg = (recipes.length === 0) ? "📭 Нет рецептов. Создайте первый рецепт." : "Нет рецептов, соответствующих фильтру.";
+            container.innerHTML = `<div class="empty-state">${msg}</div>`; 
+            return; 
+        }
         let html = '';
         filtered.forEach(r => {
             let ingPreview = r.ingredients.slice(0,3).map(i=>`${i.name} ${i.count}`).join(', ');
+            if(r.ingredients.length > 3) ingPreview += '…';
+            const typeLabel = (r.type === 'alcohol') ? '🍸 Алкоголь' : '🧃 Отрезвитель';
             html += `<div class="recipe-card" data-id="${r.id}"><div class="recipe-header"><span class="recipe-title">${escapeHtml(r.name)}</span><span class="icon-btn del-recipe" data-id="${r.id}" style="background:var(--bg-tertiary);">🗑</span></div>
-                    <div class="recipe-badges"><span class="badge">⏳ ${r.fermentation} ${r.fermentationUnit}</span>${r.distillation ? `<span class="badge">🔥 Дистилляция ${r.distillationCount || 1} раз(а)</span>` : `<span class="badge">⚡ Без дистилляции</span>`}${r.aging > 0 ? `<span class="badge">🪵 ${r.aging} лет (${r.wood})</span>` : `<span class="badge">📦 Без выдержки</span>`}</div>
+                    <div class="recipe-badges"><span class="badge">⏳ ${r.fermentation} ${r.fermentationUnit}</span>${r.distillation ? `<span class="badge">🔥 Дистилляция ${r.distillationCount || 1} раз(а)</span>` : `<span class="badge">⚡ Без дистилляции</span>`}${r.aging > 0 ? `<span class="badge">🪵 ${r.aging} лет (${r.wood})</span>` : `<span class="badge">📦 Без выдержки</span>`}<span class="badge">${typeLabel}</span></div>
                     <div class="ingredients-line">🧪 ${ingPreview}</div></div>`;
         });
         container.innerHTML = html;
         document.querySelectorAll('.recipe-card').forEach(card => { card.addEventListener('click', (e) => { if(e.target.classList.contains('del-recipe')) return; openRecipeModal(card.dataset.id); }); });
         document.querySelectorAll('.del-recipe').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); if(confirm("Удалить рецепт?")){ recipes = recipes.filter(r=>r.id !== btn.dataset.id); saveRecipes(); renderRecipes(); } }; });
     }
+    
     function openRecipeModal(id=null){
         editingRecipeId = id;
         const modal = document.getElementById('recipeModal');
@@ -1067,6 +1081,8 @@
             const r = recipes.find(r=>r.id===id);
             if(r){
                 document.getElementById('recipeNameInput').value = r.name;
+                const drinkTypeRadio = r.type === 'detox' ? document.querySelector('input[name="drinkType"][value="detox"]') : document.querySelector('input[name="drinkType"][value="alcohol"]');
+                if(drinkTypeRadio) drinkTypeRadio.checked = true;
                 document.getElementById('fermentValue').value = r.fermentation;
                 document.getElementById('fermentUnit').value = r.fermentationUnit;
                 document.getElementById('distillationCheck').checked = r.distillation;
@@ -1080,6 +1096,7 @@
             }
         } else {
             document.getElementById('recipeNameInput').value = '';
+            document.querySelector('input[name="drinkType"][value="alcohol"]').checked = true;
             document.getElementById('fermentValue').value = '';
             document.getElementById('fermentUnit').value = 'минут';
             document.getElementById('distillationCheck').checked = false;
@@ -1107,10 +1124,11 @@
     function saveCurrentRecipe(){
         const name = document.getElementById('recipeNameInput').value.trim(); if(!name){ alert("Введите название"); return; }
         const ings = getIngredientsFromModal(); if(ings.length===0){ alert("Добавьте ингредиенты"); return; }
+        const drinkType = document.querySelector('input[name="drinkType"]:checked').value;
         const fermentation = parseInt(document.getElementById('fermentValue').value)||0; const unit = document.getElementById('fermentUnit').value;
         const distillation = document.getElementById('distillationCheck').checked; const distCount = distillation ? (parseInt(document.getElementById('distCount').value)||1) : 0;
         const aging = parseInt(document.getElementById('agingYears').value)||0; const wood = document.getElementById('woodSelect').value;
-        const recipeData = { id: editingRecipeId || Date.now().toString(), name, ingredients:ings, fermentation, fermentationUnit:unit, distillation, distillationCount:distCount, aging, wood };
+        const recipeData = { id: editingRecipeId || Date.now().toString(), name, ingredients:ings, fermentation, fermentationUnit:unit, distillation, distillationCount:distCount, aging, wood, type: drinkType };
         if(editingRecipeId){ const idx = recipes.findIndex(r=>r.id===editingRecipeId); if(idx!==-1) recipes[idx]=recipeData; } else recipes.push(recipeData);
         saveRecipes(); renderRecipes(); document.getElementById('recipeModal').style.display='none';
         showToast('Рецепт сохранён');
