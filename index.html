@@ -833,8 +833,8 @@
                     <button id="btnAddRecipe">➕ Новый рецепт</button>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="recipeFilterContainer">
                         <span data-filter="all" class="badge active-filter" style="background:var(--accent); color:white; cursor:pointer;">Все</span>
-                        <span data-filter="distillation" class="badge" style="cursor:pointer;">С дистилляцией</span>
-                        <span data-filter="aged" class="badge" style="cursor:pointer;">С выдержкой</span>
+                        <span data-filter="alcohol" class="badge" style="cursor:pointer;">Алкоголь</span>
+                        <span data-filter="detox" class="badge" style="cursor:pointer;">Отрезвитель</span>
                     </div>
                     <input type="text" id="recipeSearch" class="search-input" placeholder="🔍 Поиск по названию" style="width: 240px;">
                 </div>
@@ -851,6 +851,12 @@
     <div class="modal-content">
         <div class="modal-header"><span id="modalTitle">Рецепт</span><span class="close-modal" id="closeRecipeModal">✕</span></div>
         <input type="text" id="recipeNameInput" placeholder="Название рецепта" style="width:100%; padding:12px; border:1px solid var(--border-light); border-radius:14px; margin-bottom:16px; background:var(--bg-tertiary); color:var(--text-primary);">
+        <div><label style="font-weight:500;">Тип напитка</label>
+            <div style="display: flex; gap: 16px; margin: 8px 0 12px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="radio" name="drinkType" value="alcohol" checked> Алкоголь</label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="radio" name="drinkType" value="detox"> Отрезвитель</label>
+            </div>
+        </div>
         <div><label style="font-weight:500;">Ингредиенты (на 1 котёл)</label><div id="ingredientsList"></div><button id="addIngredientBtn" style="background:var(--bg-tertiary); color:var(--text-primary); margin:10px 0; width:100%;">+ Добавить ингредиент</button></div>
         <div style="margin:12px 0;"><label style="font-weight:500;">Брожение</label><div style="display:flex; gap:8px;"><input type="number" id="fermentValue" placeholder="8" style="flex:1; padding:10px; border:1px solid var(--border-light); border-radius:14px; background:var(--bg-tertiary); color:var(--text-primary);"> <select id="fermentUnit" style="padding:10px; border-radius:14px; border:1px solid var(--border-light); background:var(--bg-tertiary); color:var(--text-primary);"><option value="минут" selected>минут</option><option value="часов">часов</option><option value="дней">дней</option></select></div></div>
         <div style="margin:12px 0; display: flex; gap: 12px; align-items: center;"><span style="font-weight:500;">Дистилляция</span> <input type="checkbox" id="distillationCheck"> <span id="distCountSpan" style="display:none;"><input type="number" id="distCount" value="1" min="1" style="width:70px; padding:8px; border-radius:12px; border:1px solid var(--border-light); background:var(--bg-tertiary);"> раз(а)</span></div>
@@ -951,7 +957,7 @@
         }
     });
     
-    // ==================== АЛКОГОЛЬ (код тот же, но адаптирован под темы) ====================
+    // ==================== АЛКОГОЛЬ ====================
     let drinks = [];
     function genId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 6); }
     function saveAlcohol() { localStorage.setItem('alcohol_simple', JSON.stringify(drinks)); }
@@ -1031,29 +1037,110 @@
     };
     document.getElementById('alcoholCancelImport').onclick = () => { alcoholImportArea.style.display = 'none'; };
     
-    // ==================== РЕЦЕПТЫ ====================
+    // ==================== РЕЦЕПТЫ (БАЗА ДАННЫХ) ====================
     let recipes = [];
     let currentFilterRec = 'all', searchRec = '';
     let editingRecipeId = null;
     function saveRecipes() { localStorage.setItem('recipes_simple', JSON.stringify(recipes)); }
     function loadRecipes() {
         const saved = localStorage.getItem('recipes_simple');
-        if(saved) { try { recipes = JSON.parse(saved); if(!Array.isArray(recipes)) recipes = []; } catch(e){ recipes = []; } }
-        else recipes = [];
+        if(saved) { 
+            try { 
+                recipes = JSON.parse(saved); 
+                if(!Array.isArray(recipes)) recipes = []; 
+            } catch(e){ recipes = []; }
+        } else {
+            recipes = [];
+        }
+        // Если рецептов нет, загружаем базу данных с сайта Sakeva
+        if(recipes.length === 0) {
+            loadSakevaRecipes();
+        }
         saveRecipes();
     }
+    
+    // Функция для загрузки всех рецептов с Sakeva (алкоголь и отрезвители)
+    function loadSakevaRecipes() {
+        const sakevaAlcoholRecipes = [
+            { name: "Ягодное шампанское", ingredients: [{name:"Сладкие ягоды",count:20}], fermentation: 12, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 5, wood: "Любая бочка", type: "alcohol" },
+            { name: "Пшеничное пиво", ingredients: [{name:"Пшеница",count:3}], fermentation: 8, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 2, wood: "Березовая бочка", type: "alcohol" },
+            { name: "Темное пиво", ingredients: [{name:"Пшеница",count:6}], fermentation: 8, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 8, wood: "Тёмно-дубовая бочка", type: "alcohol" },
+            { name: "Красное вино", ingredients: [{name:"Сладкие ягоды",count:5}], fermentation: 5, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 20, wood: "Любая бочка", type: "alcohol" },
+            { name: "Яблочный сидр", ingredients: [{name:"Яблоко",count:14}], fermentation: 7, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 3, wood: "Любая бочка", type: "alcohol" },
+            { name: "Виски", ingredients: [{name:"Пшеница",count:10}], fermentation: 10, fermentationUnit: "минут", distillation: true, distillationCount: 2, aging: 18, wood: "Еловая бочка", type: "alcohol" },
+            { name: "Ром", ingredients: [{name:"Сахарный тростник",count:18}], fermentation: 6, fermentationUnit: "минут", distillation: true, distillationCount: 2, aging: 14, wood: "Дубовая бочка", type: "alcohol" },
+            { name: "Водка", ingredients: [{name:"Картофель",count:10}], fermentation: 15, fermentationUnit: "минут", distillation: true, distillationCount: 3, aging: 0, wood: "Нет", type: "alcohol" },
+            { name: "Водка с грибами", ingredients: [{name:"Картофель",count:10},{name:"Грибы",count:3}], fermentation: 16, fermentationUnit: "минут", distillation: true, distillationCount: 5, aging: 0, wood: "Нет", type: "alcohol" },
+            { name: "Джин", ingredients: [{name:"Пшеница",count:9},{name:"Ягоды",count:6},{name:"Сахар",count:1}], fermentation: 6, fermentationUnit: "минут", distillation: true, distillationCount: 2, aging: 0, wood: "Нет", type: "alcohol" },
+            { name: "Текила", ingredients: [{name:"Кактус",count:8}], fermentation: 15, fermentationUnit: "минут", distillation: true, distillationCount: 2, aging: 12, wood: "Березовая бочка", type: "alcohol" },
+            { name: "Зеленый абсент", ingredients: [{name:"Пшеница",count:17},{name:"Трава",count:2}], fermentation: 5, fermentationUnit: "минут", distillation: true, distillationCount: 6, aging: 0, wood: "Нет", type: "alcohol" },
+            { name: "Самогон", ingredients: [{name:"Картофель",count:3},{name:"Пшеница",count:1}], fermentation: 8, fermentationUnit: "минут", distillation: true, distillationCount: 4, aging: 0, wood: "Нет", type: "alcohol" },
+            { name: "Чача", ingredients: [{name:"Виноград",count:3},{name:"Яблоко",count:1},{name:"Сахар",count:5}], fermentation: 6, fermentationUnit: "минут", distillation: true, distillationCount: 1, aging: 6, wood: "Акациевая бочка", type: "alcohol" },
+            { name: "Саке", ingredients: [{name:"Рис",count:6},{name:"Пшеница",count:3},{name:"Вода",count:6}], fermentation: 10, fermentationUnit: "минут", distillation: true, distillationCount: 1, aging: 9, wood: "Тропическая бочка", type: "alcohol" },
+            { name: "Квас", ingredients: [{name:"Пшеница",count:3},{name:"Сахар",count:2},{name:"Вода",count:1}], fermentation: 6, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 3, wood: "Любая бочка", type: "alcohol" },
+            { name: "Сливочное пиво", ingredients: [{name:"Сахар",count:1},{name:"Молоко",count:6},{name:"Вода",count:5}], fermentation: 8, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 3, wood: "Тёмно-дубовая бочка", type: "alcohol" },
+            { name: "Глинтвейн", ingredients: [{name:"Сладкие ягоды",count:5},{name:"Сахар",count:2},{name:"Вода",count:1}], fermentation: 12, fermentationUnit: "минут", distillation: true, distillationCount: 1, aging: 0, wood: "Нет", type: "alcohol" },
+            { name: "Кумыс", ingredients: [{name:"Молоко",count:2},{name:"Сахар",count:3},{name:"Вода",count:1}], fermentation: 10, fermentationUnit: "минут", distillation: true, distillationCount: 1, aging: 0, wood: "Нет", type: "alcohol" },
+            { name: "Медовуха", ingredients: [{name:"Мёд",count:8},{name:"Вода",count:2}], fermentation: 10, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 4, wood: "Дубовая бочка", type: "alcohol" },
+            { name: "Jägermeister", ingredients: [{name:"Трава",count:10},{name:"Сахар",count:4},{name:"Вода",count:4}], fermentation: 12, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 3, wood: "Дубовая бочка", type: "alcohol" },
+            { name: "Эль", ingredients: [{name:"Пшеница",count:3},{name:"Ячмень",count:8}], fermentation: 9, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 6, wood: "Дубовая бочка", type: "alcohol" },
+            { name: "Рижский бальзам", ingredients: [{name:"Трава",count:5},{name:"Сахар",count:2},{name:"Вода",count:1},{name:"Сладкие ягоды",count:1},{name:"Мёд",count:1},{name:"Корень",count:1}], fermentation: 10, fermentationUnit: "минут", distillation: true, distillationCount: 2, aging: 10, wood: "Дубовая бочка", type: "alcohol" },
+            { name: "Драконий коньяк", ingredients: [{name:"Драконья плоть",count:20},{name:"Кость",count:3}], fermentation: 6, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 100, wood: "Дубовая бочка", type: "alcohol" },
+            { name: "Шампанское", ingredients: [{name:"Сладкие ягоды",count:10},{name:"Сахар",count:3}], fermentation: 5, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 10, wood: "Любая бочка", type: "alcohol" }
+        ];
+        
+        const sakevaDetoxRecipes = [
+            { name: "Картофельный суп", ingredients: [{name:"Картофель",count:5},{name:"Вода",count:3}], fermentation: 3, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 0, wood: "Нет", type: "detox" },
+            { name: "Кофе", ingredients: [{name:"Кофейные зерна",count:12},{name:"Вода",count:2}], fermentation: 2, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 0, wood: "Нет", type: "detox" },
+            { name: "Зеленый чай", ingredients: [{name:"Чайные листья",count:1},{name:"Вода",count:3}], fermentation: 6, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 0, wood: "Нет", type: "detox" },
+            { name: "Огуречный рассол", ingredients: [{name:"Огурцы",count:3},{name:"Вода",count:10}], fermentation: 10, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 0, wood: "Нет", type: "detox" },
+            { name: "Тыквенный сок", ingredients: [{name:"Тыква",count:2},{name:"Вода",count:3}], fermentation: 6, fermentationUnit: "минут", distillation: false, distillationCount: 0, aging: 0, wood: "Нет", type: "detox" }
+        ];
+        
+        // Преобразуем в нужный формат и добавляем ID
+        sakevaAlcoholRecipes.forEach(recipe => {
+            recipes.push({
+                id: genId(),
+                name: recipe.name,
+                ingredients: recipe.ingredients,
+                fermentation: recipe.fermentation,
+                fermentationUnit: recipe.fermentationUnit,
+                distillation: recipe.distillation,
+                distillationCount: recipe.distillationCount,
+                aging: recipe.aging,
+                wood: recipe.wood,
+                type: recipe.type
+            });
+        });
+        sakevaDetoxRecipes.forEach(recipe => {
+            recipes.push({
+                id: genId(),
+                name: recipe.name,
+                ingredients: recipe.ingredients,
+                fermentation: recipe.fermentation,
+                fermentationUnit: recipe.fermentationUnit,
+                distillation: recipe.distillation,
+                distillationCount: recipe.distillationCount,
+                aging: recipe.aging,
+                wood: recipe.wood,
+                type: recipe.type
+            });
+        });
+    }
+    
     function renderRecipes() {
         let filtered = [...recipes];
         if(searchRec.trim()){ const q = searchRec.toLowerCase(); filtered = filtered.filter(r=> r.name.toLowerCase().includes(q) || r.ingredients.some(i=>i.name.toLowerCase().includes(q))); }
-        if(currentFilterRec === 'distillation') filtered = filtered.filter(r=> r.distillation === true);
-        if(currentFilterRec === 'aged') filtered = filtered.filter(r=> r.aging > 0);
+        if(currentFilterRec === 'alcohol') filtered = filtered.filter(r=> r.type === 'alcohol');
+        if(currentFilterRec === 'detox') filtered = filtered.filter(r=> r.type === 'detox');
+        
         const container = document.getElementById('recipeListContainer');
         if(filtered.length === 0){ container.innerHTML = `<div class="empty-state">📭 Нет рецептов. Создайте первый рецепт.</div>`; return; }
         let html = '';
         filtered.forEach(r => {
             let ingPreview = r.ingredients.slice(0,3).map(i=>`${i.name} ${i.count}`).join(', ');
             html += `<div class="recipe-card" data-id="${r.id}"><div class="recipe-header"><span class="recipe-title">${escapeHtml(r.name)}</span><span class="icon-btn del-recipe" data-id="${r.id}" style="background:var(--bg-tertiary);">🗑</span></div>
-                    <div class="recipe-badges"><span class="badge">⏳ ${r.fermentation} ${r.fermentationUnit}</span>${r.distillation ? `<span class="badge">🔥 Дистилляция ${r.distillationCount || 1} раз(а)</span>` : `<span class="badge">⚡ Без дистилляции</span>`}${r.aging > 0 ? `<span class="badge">🪵 ${r.aging} лет (${r.wood})</span>` : `<span class="badge">📦 Без выдержки</span>`}</div>
+                    <div class="recipe-badges"><span class="badge">⏳ ${r.fermentation} ${r.fermentationUnit}</span>${r.distillation ? `<span class="badge">🔥 Дистилляция ${r.distillationCount || 1} раз(а)</span>` : `<span class="badge">⚡ Без дистилляции</span>`}${r.aging > 0 ? `<span class="badge">🪵 ${r.aging} лет (${r.wood})</span>` : `<span class="badge">📦 Без выдержки</span>`}<span class="badge">${r.type === 'alcohol' ? '🍸 Алкоголь' : '🧃 Отрезвитель'}</span></div>
                     <div class="ingredients-line">🧪 ${ingPreview}</div></div>`;
         });
         container.innerHTML = html;
@@ -1067,6 +1154,9 @@
             const r = recipes.find(r=>r.id===id);
             if(r){
                 document.getElementById('recipeNameInput').value = r.name;
+                // Устанавливаем тип напитка
+                const drinkTypeRadio = r.type === 'detox' ? document.querySelector('input[name="drinkType"][value="detox"]') : document.querySelector('input[name="drinkType"][value="alcohol"]');
+                if(drinkTypeRadio) drinkTypeRadio.checked = true;
                 document.getElementById('fermentValue').value = r.fermentation;
                 document.getElementById('fermentUnit').value = r.fermentationUnit;
                 document.getElementById('distillationCheck').checked = r.distillation;
@@ -1080,6 +1170,8 @@
             }
         } else {
             document.getElementById('recipeNameInput').value = '';
+            // Сброс типа напитка на "Алкоголь" по умолчанию
+            document.querySelector('input[name="drinkType"][value="alcohol"]').checked = true;
             document.getElementById('fermentValue').value = '';
             document.getElementById('fermentUnit').value = 'минут';
             document.getElementById('distillationCheck').checked = false;
@@ -1107,10 +1199,11 @@
     function saveCurrentRecipe(){
         const name = document.getElementById('recipeNameInput').value.trim(); if(!name){ alert("Введите название"); return; }
         const ings = getIngredientsFromModal(); if(ings.length===0){ alert("Добавьте ингредиенты"); return; }
+        const drinkType = document.querySelector('input[name="drinkType"]:checked').value;
         const fermentation = parseInt(document.getElementById('fermentValue').value)||0; const unit = document.getElementById('fermentUnit').value;
         const distillation = document.getElementById('distillationCheck').checked; const distCount = distillation ? (parseInt(document.getElementById('distCount').value)||1) : 0;
         const aging = parseInt(document.getElementById('agingYears').value)||0; const wood = document.getElementById('woodSelect').value;
-        const recipeData = { id: editingRecipeId || Date.now().toString(), name, ingredients:ings, fermentation, fermentationUnit:unit, distillation, distillationCount:distCount, aging, wood };
+        const recipeData = { id: editingRecipeId || Date.now().toString(), name, ingredients:ings, fermentation, fermentationUnit:unit, distillation, distillationCount:distCount, aging, wood, type: drinkType };
         if(editingRecipeId){ const idx = recipes.findIndex(r=>r.id===editingRecipeId); if(idx!==-1) recipes[idx]=recipeData; } else recipes.push(recipeData);
         saveRecipes(); renderRecipes(); document.getElementById('recipeModal').style.display='none';
         showToast('Рецепт сохранён');
